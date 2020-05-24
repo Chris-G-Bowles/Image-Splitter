@@ -23,7 +23,7 @@ public class ImageSplitter {
 		} else {
 			inputImageLocation = args[0];
 		}
-		String outputResolutionOption;
+		String outputResolutionString;
 		if (args.length == 0) {
 			System.out.println("Select the output resolution for the subimages:");
 			System.out.println("1) 8x8 pixels");
@@ -31,9 +31,9 @@ public class ImageSplitter {
 			System.out.println("3) 32x32 pixels");
 			System.out.println("4) 64x64 pixels");
 			System.out.print("Output resolution option: ");
-			outputResolutionOption = input.nextLine();
+			outputResolutionString = input.nextLine();
 		} else {
-			outputResolutionOption = args[1];
+			outputResolutionString = args[1];
 		}
 		String outputDirectoryLocation;
 		if (args.length == 0) {
@@ -48,9 +48,9 @@ public class ImageSplitter {
 			BufferedImage inputImage = ImageIO.read(inputStream);
 			inputStream.close();
 			if (inputImage != null) {
-				if (isValidInteger(outputResolutionOption) && Integer.parseInt(outputResolutionOption) >= 1 &&
-						Integer.parseInt(outputResolutionOption) <= 4) {
-					int outputLength = (int)Math.pow(2, Integer.parseInt(outputResolutionOption) + 2);
+				if (isValidInteger(outputResolutionString) && Integer.parseInt(outputResolutionString) >= 1 &&
+						Integer.parseInt(outputResolutionString) <= 4) {
+					int outputLength = (int)Math.pow(2, Integer.parseInt(outputResolutionString) + 2);
 					if (inputImage.getWidth() >= 1 && inputImage.getWidth() <= 256 &&
 							inputImage.getWidth() % outputLength == 0 && inputImage.getHeight() >= 1 &&
 							inputImage.getHeight() <= 256 && inputImage.getHeight() % outputLength == 0) {
