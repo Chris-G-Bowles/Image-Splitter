@@ -124,4 +124,9 @@ public class ImageSplitter {
 			return false;
 		}
 	}
+	
+	private static void error(String message) {
+		System.out.println("Error: " + message);
+		System.exit(1);
+	}
 }
