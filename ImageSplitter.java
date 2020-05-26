@@ -23,6 +23,12 @@ public class ImageSplitter {
 		} else {
 			inputImageLocation = args[0];
 		}
+		FileInputStream inputStream = null;
+		try {
+			inputStream = new FileInputStream(inputImageLocation);
+		} catch (Exception e) {
+			error(inputImageLocation + " is not a valid file.");
+		}
 		String outputResolutionString;
 		if (args.length == 0) {
 			System.out.println("Select the output resolution for the subimages:");
@@ -35,6 +41,16 @@ public class ImageSplitter {
 		} else {
 			outputResolutionString = args[1];
 		}
+		Scanner lineInput = new Scanner(outputResolutionString);
+		if (!lineInput.hasNextInt()) {
+			error("Invalid output resolution input.");
+		}
+		int outputResolutionOption = lineInput.nextInt();
+		if (outputResolutionOption < 1 || outputResolutionOption > 4) {
+			error("Invalid output resolution option.");
+		}
+		lineInput.close();
+		int outputLength = (int)Math.pow(2, outputResolutionOption + 2);
 		String outputDirectoryLocation;
 		if (args.length == 0) {
 			System.out.print("Enter the output directory's location: ");
@@ -42,64 +58,58 @@ public class ImageSplitter {
 		} else {
 			outputDirectoryLocation = args[2];
 		}
+		File outputDirectory = new File(outputDirectoryLocation);
+		if (!outputDirectory.exists() && outputDirectory.mkdirs()) {
+			System.out.println(outputDirectoryLocation + " was created.");
+		}
 		input.close();
+		BufferedImage inputImage;
 		try {
-			FileInputStream inputStream = new FileInputStream(inputImageLocation);
-			BufferedImage inputImage = ImageIO.read(inputStream);
-			inputStream.close();
-			if (inputImage != null) {
-				if (isValidInteger(outputResolutionString) && Integer.parseInt(outputResolutionString) >= 1 &&
-						Integer.parseInt(outputResolutionString) <= 4) {
-					int outputLength = (int)Math.pow(2, Integer.parseInt(outputResolutionString) + 2);
-					if (inputImage.getWidth() >= 1 && inputImage.getWidth() <= 256 &&
-							inputImage.getWidth() % outputLength == 0 && inputImage.getHeight() >= 1 &&
-							inputImage.getHeight() <= 256 && inputImage.getHeight() % outputLength == 0) {
-						File outputDirectory = new File(outputDirectoryLocation);
-						if (!outputDirectory.exists() && outputDirectory.mkdir()) {
-							System.out.println("(" + outputDirectoryLocation + " was created.)");
-						}
-						int subimageIndex = 0;
-						int subimagesCreated = 0;
-						for (int y = 0; y < inputImage.getHeight(); y += outputLength) {
-							for (int x = 0; x < inputImage.getWidth(); x += outputLength) {
-								BufferedImage subimage = new BufferedImage(outputLength, outputLength,
-										BufferedImage.TYPE_INT_ARGB);
-								for (int subimageY = 0; subimageY < outputLength; subimageY++) {
-									for (int subimageX = 0; subimageX < outputLength; subimageX++) {
-										subimage.setRGB(subimageX, subimageY,
-												inputImage.getRGB(x + subimageX, y + subimageY));
-									}
-								}
-								String subimageLocation = String.format("%s/Subimage_%04d.png",
-										outputDirectoryLocation, subimageIndex);
-								try {
-									ImageIO.write(subimage, "png", new FileOutputStream(subimageLocation));
-									subimagesCreated++;
-								} catch (Exception e) {
-									System.out.println("Error: Could not create " + subimageLocation + ".");
-								}
-								subimageIndex++;
-							}
-						}
-						if (subimagesCreated == 1) {
-							System.out.println("Success: " + subimagesCreated + " subimage was created from " +
-									inputImageLocation + "!");
-						} else if (subimagesCreated > 1) {
-							System.out.println("Success: " + subimagesCreated + " subimages were created from " +
-									inputImageLocation + "!");
-						}
-					} else {
-						System.out.println("Error: " + inputImageLocation + " has an invalid resolution of " +
-								inputImage.getWidth() + "x" + inputImage.getHeight() + " pixels.");
-					}
-				} else {
-					System.out.println("Error: Invalid output resolution option.");
-				}
-			} else {
-				System.out.println("Error: " + inputImageLocation + " does not contain a readable image.");
-			}
+			inputImage = ImageIO.read(inputStream);
 		} catch (Exception e) {
-			System.out.println("Error: " + inputImageLocation + " not found.");
+			inputImage = null;
+		}
+		if (inputImage == null) {
+			error(inputImageLocation + " does not contain a readable image.");
+		}
+		try {
+			inputStream.close();
+		} catch (Exception e) {
+			error("Unable to close inputStream.");
+		}
+		if (inputImage.getWidth() < 1 || inputImage.getWidth() > 256 ||
+				inputImage.getWidth() % outputLength != 0 || inputImage.getHeight() < 1 ||
+				inputImage.getHeight() > 256 || inputImage.getHeight() % outputLength != 0) {
+			error(inputImageLocation + " has an invalid resolution of " +
+					inputImage.getWidth() + "x" + inputImage.getHeight() + " pixels.");
+		}
+		int subimageIndex = 0;
+		int subimagesCreated = 0;
+		for (int y = 0; y < inputImage.getHeight(); y += outputLength) {
+			for (int x = 0; x < inputImage.getWidth(); x += outputLength) {
+				BufferedImage subimage = new BufferedImage(outputLength, outputLength, BufferedImage.TYPE_INT_ARGB);
+				for (int subimageY = 0; subimageY < outputLength; subimageY++) {
+					for (int subimageX = 0; subimageX < outputLength; subimageX++) {
+						subimage.setRGB(subimageX, subimageY, inputImage.getRGB(x + subimageX, y + subimageY));
+					}
+				}
+				String subimageLocation = String.format("%s/Subimage_%04d.png", outputDirectoryLocation, subimageIndex);
+				subimageIndex++;
+				try {
+					ImageIO.write(subimage, "png", new FileOutputStream(subimageLocation));
+				} catch (Exception e) {
+					System.out.println("Unable to create " + subimageLocation + ".");
+					continue;
+				}
+				subimagesCreated++;
+			}
+		}
+		if (subimagesCreated == 1) {
+			System.out.println("Success: " + subimagesCreated + " subimage was created from " +
+					inputImageLocation + "!");
+		} else if (subimagesCreated > 1) {
+			System.out.println("Success: " + subimagesCreated + " subimages were created from " +
+					inputImageLocation + "!");
 		}
 	}
 	
